@@ -1,90 +1,423 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Prediction model for capecitabine-induced HFS (Multinomial, outcome=1)</title>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; line-height: 1.5; margin: 20px; }
-    .high-risk { color: red; font-weight: bold; }
-    .low-risk { color: green; font-weight: bold; }
-    .advice { margin-top: 12px; padding: 10px; border-radius: 8px; background: #f7f7f7; }
-    .advice.high { border-left: 4px solid red; }
-    .advice.low { border-left: 4px solid green; }
-    label { display:block; margin: 6px 0; }
-    select, input { margin-left: 6px; }
-    button { margin-top: 12px; padding: 6px 12px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Capecitabine-Induced HFS Prediction Tool</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f6fa;
+  color: #243247;
+  margin: 0;
+  padding: 24px 14px;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 820px;
+  margin: 0 auto;
+  background: white;
+  padding: 32px;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+h1 {
+  color: #163c70;
+  font-size: 27px;
+  line-height: 1.35;
+  margin: 0 0 10px;
+}
+
+.subtitle {
+  color: #65758b;
+  font-size: 15px;
+  margin-bottom: 26px;
+}
+
+h2 {
+  color: #163c70;
+  font-size: 20px;
+  margin-top: 25px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input, select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #c7d2e0;
+  border-radius: 7px;
+  font-size: 16px;
+  background: white;
+}
+
+input:focus, select:focus {
+  outline: 2px solid #93b9eb;
+  border-color: #2563ab;
+}
+
+button {
+  background: #1657a0;
+  color: white;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 7px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #10437d;
+}
+
+.result-box {
+  display: none;
+  margin-top: 28px;
+  padding: 22px;
+  background: #f1f6fc;
+  border-radius: 10px;
+  border-left: 5px solid #1657a0;
+}
+
+.risk-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #163c70;
+  margin: 8px 0;
+}
+
+.high-risk {
+  color: #c62828;
+  font-weight: bold;
+}
+
+.low-risk {
+  color: #188038;
+  font-weight: bold;
+}
+
+.advice {
+  margin-top: 18px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  background: white;
+}
+
+.advice.high {
+  border-left: 4px solid #c62828;
+}
+
+.advice.low {
+  border-left: 4px solid #188038;
+}
+
+.advice ul {
+  padding-left: 22px;
+}
+
+.error {
+  color: #b42318;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+footer {
+  margin-top: 38px;
+  padding-top: 24px;
+  border-top: 1px solid #dce3ed;
+  font-size: 14px;
+  color: #536171;
+}
+
+footer h3 {
+  color: #163c70;
+  font-size: 17px;
+}
+
+footer a {
+  color: #1657a0;
+  overflow-wrap: anywhere;
+}
+
+.visitor-counter {
+  margin-top: 24px;
+}
+
+.disclaimer {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #697586;
+  border-top: 1px solid #e5e9ef;
+  padding-top: 15px;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 22px 18px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+  .risk-value {
+    font-size: 28px;
+  }
+}
+</style>
 </head>
+
 <body>
-  <h2>Prediction model for capecitabine-induced moderate to severe Hand-Foot syndrome </h2>
 
-  <label>Capecitabine Dosage (mg/day):
-    <select id="dosage">
-      <option value="">Select</option>
-      <option value="2000">2000</option>
-      <option value="2500">2500</option>
-      <option value="3000">3000</option>
-      <option value="3500">3500</option>
-      <option value="4000">4000</option>
-    </select>
-  </label>
+<main class="container">
 
-  <label>Age: <input type="number" id="age" step="1"></label>
+<h1>
+  Capecitabine-Induced Hand–Foot Syndrome
+  Prediction Tool
+</h1>
 
-  <label>Sex:
-    <select id="male">
-      <option value="">Select</option>
-      <option value="0">Female</option>
-      <option value="1">Male</option>
-    </select>
-  </label>
+<p class="subtitle">
+  Clinical risk prediction model for grade 2–3
+  hand–foot syndrome (HFS) in patients receiving
+  capecitabine-based chemotherapy.
+</p>
 
-  <label>BMI: <input type="number" id="bmi" step="0.1"></label>
+<h2>Patient and Treatment Characteristics</h2>
 
-  <label>Combination Regimen:
-    <select id="combinedrug">
-      <option value="">Select</option>
-      <option value="0">None</option>
-      <option value="1">Oxaliplatin</option>
-      <option value="2">Gemcitabine</option>
-      <option value="3">Other</option>
-    </select>
-  </label>
+<form id="predictionForm" onsubmit="predictHFS(event)">
 
-  <button onclick="predictHFS()">Predict</button>
+<div class="form-group">
+  <label for="dosage">Capecitabine Dosage (mg/day)</label>
+  <select id="dosage" required>
+    <option value="">Select dosage</option>
+    <option value="2000">2000</option>
+    <option value="2500">2500</option>
+    <option value="3000">3000</option>
+    <option value="3500">3500</option>
+    <option value="4000">4000</option>
+  </select>
+</div>
 
-  <h3 id="result"></h3>
-  <div id="advice" class="advice" style="display:none;"></div>
+<div class="form-group">
+  <label for="age">Age (years)</label>
+  <input
+    type="number"
+    id="age"
+    min="18"
+    max="120"
+    step="1"
+    placeholder="Enter age"
+    required
+  >
+</div>
+
+<div class="form-group">
+  <label for="male">Sex</label>
+  <select id="male" required>
+    <option value="">Select sex</option>
+    <option value="0">Female</option>
+    <option value="1">Male</option>
+  </select>
+</div>
+
+<div class="form-group">
+  <label for="bmi">Body Mass Index (BMI, kg/m²)</label>
+  <input
+    type="number"
+    id="bmi"
+    min="10"
+    max="70"
+    step="0.1"
+    placeholder="Enter BMI"
+    required
+  >
+</div>
+
+<div class="form-group">
+  <label for="combinedrug">Combination Regimen</label>
+  <select id="combinedrug" required>
+    <option value="">Select regimen</option>
+    <option value="0">None</option>
+    <option value="1">Oxaliplatin</option>
+    <option value="2">Gemcitabine</option>
+    <option value="3">Other</option>
+  </select>
+</div>
+
+<button type="submit">Calculate HFS Risk</button>
+
+</form>
+
+<p id="error" class="error" role="alert"></p>
+
+<section id="resultBox" class="result-box" aria-live="polite">
+
+<h2>Prediction Result</h2>
+
+<p>
+  Predicted probability of grade 2–3 HFS:
+</p>
+
+<div id="probability" class="risk-value"></div>
+
+<p>
+  Risk threshold: <strong>15%</strong>
+</p>
+
+<p>
+  Risk classification:
+  <span id="riskClass"></span>
+</p>
+
+<div id="advice" class="advice"></div>
+
+</section>
+
+<!-- End of prediction interface -->
+
+<footer>
+
+<section>
+<h3>Reference</h3>
+
+<p>
+  Chantharakhit C, Patumanond J, Phinyo P,
+  Chai-Adisaksopha C.
+  Development of a Clinical Risk Prediction Model
+  for Risk Stratification of Capecitabine-Induced
+  Grade 2–3 Hand–Foot Syndrome.
+  <em>Medical Sciences.</em> 2026;14:723.
+</p>
+
+<p>
+  DOI:
+  <a
+    href="https://doi.org/10.3390/medsci14070723"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    10.3390/medsci14070723
+  </a>
+</p>
+</section>
+
+<section class="visitor-counter">
+
+<h3>Website Visitors</h3>
+
+<img
+  src="https://visitor-badge.laobi.icu/badge?page_id=chaichana-medcalculator.capecitabine-hfs-prediction"
+  alt="Website Visitor Counter"
+  loading="lazy"
+>
+
+</section>
+
+<div class="disclaimer">
+  <strong>Disclaimer:</strong>
+  This prediction tool is intended for clinical
+  decision support and research purposes.
+  Predicted risk should be interpreted alongside
+  clinical assessment and does not replace
+  professional medical judgment.
+  Treatment modifications should not be based
+  solely on the predicted risk.
+</div>
+
+</footer>
+
+</main>
 
 <script>
-function predictHFS() {
-  const dosage = parseInt(document.getElementById("dosage").value);
-  const age = parseFloat(document.getElementById("age").value);
-  const male = parseInt(document.getElementById("male").value);
-  const bmi = parseFloat(document.getElementById("bmi").value);
-  const combinedrug = parseInt(document.getElementById("combinedrug").value);
+function predictHFS(event) {
 
-  const resultEl = document.getElementById("result");
-  const adviceEl = document.getElementById("advice");
+  if (event) {
+    event.preventDefault();
+  }
 
-  if ([dosage, age, male, bmi, combinedrug].some(v => Number.isNaN(v))) {
-    resultEl.innerText = "⚠ Please fill in all fields before prediction.";
-    adviceEl.style.display = "none";
+  const dosage = parseInt(
+    document.getElementById("dosage").value, 10
+  );
+
+  const age = parseFloat(
+    document.getElementById("age").value
+  );
+
+  const male = parseInt(
+    document.getElementById("male").value, 10
+  );
+
+  const bmi = parseFloat(
+    document.getElementById("bmi").value
+  );
+
+  const combinedrug = parseInt(
+    document.getElementById("combinedrug").value, 10
+  );
+
+  const resultBox = document.getElementById("resultBox");
+  const errorEl = document.getElementById("error");
+
+  errorEl.textContent = "";
+  resultBox.style.display = "none";
+
+  if (
+    [dosage, age, male, bmi, combinedrug]
+    .some(v => !Number.isFinite(v))
+  ) {
+    errorEl.textContent =
+      "Please complete all fields before prediction.";
     return;
   }
 
-  // dummy coding
-  const d2500 = (dosage === 2500) ? 1 : 0;
-  const d3000 = (dosage === 3000) ? 1 : 0;
-  const d3500 = (dosage === 3500) ? 1 : 0;
-  const d4000 = (dosage === 4000) ? 1 : 0;
+  if (
+    ![2000,2500,3000,3500,4000].includes(dosage) ||
+    age < 18 || age > 120 ||
+    ![0,1].includes(male) ||
+    bmi < 10 || bmi > 70 ||
+    ![0,1,2,3].includes(combinedrug)
+  ) {
+    errorEl.textContent =
+      "Please enter valid patient and treatment data.";
+    return;
+  }
 
-  const c1 = (combinedrug === 1) ? 1 : 0; // Oxaliplatin
-  const c2 = (combinedrug === 2) ? 1 : 0; // Gemcitabine
-  const c3 = (combinedrug === 3) ? 1 : 0; // Other
+  // Dummy variables for capecitabine dosage
 
-  // ----- Linear predictors -----
-  // Outcome = 1: HFS grade 2–3
+  const d2500 = dosage === 2500 ? 1 : 0;
+  const d3000 = dosage === 3000 ? 1 : 0;
+  const d3500 = dosage === 3500 ? 1 : 0;
+  const d4000 = dosage === 4000 ? 1 : 0;
+
+  // Dummy variables for combination regimen
+
+  const c1 = combinedrug === 1 ? 1 : 0;
+  const c2 = combinedrug === 2 ? 1 : 0;
+  const c3 = combinedrug === 3 ? 1 : 0;
+
+  // Multinomial logistic regression
+  // Original model coefficients retained
+
+  // Outcome 1: HFS grade 2-3
+
   const L1 = -4.84761 +
     0.9419611 * d2500 +
     2.090726  * d3000 +
@@ -97,7 +430,8 @@ function predictHFS() {
     (2.219511  * c2) +
     (-14.6672  * c3);
 
-  // Outcome = 2: Other
+  // Outcome 2: Other
+
   const L2 = -4.714329 +
     (-0.0824916 * d2500) +
     (0.3030879 * d3000) +
@@ -110,7 +444,8 @@ function predictHFS() {
     (-14.2006  * c2) +
     (-14.67934 * c3);
 
-  // Outcome = 3: Dead
+  // Outcome 3: Dead
+
   const L3 = -13.14379 +
     (1.329177 * d2500) +
     (18.05879 * d3000) +
@@ -123,58 +458,101 @@ function predictHFS() {
     (0.8691366 * c2) +
     (1.368902  * c3);
 
-  // Outcome = 4: Loss to F/U
+  // Outcome 4: Loss to follow-up
+
   const L4 = -4.130165 +
     (-0.4366283 * d2500) +
     (-0.998465  * d3000) +
     (-2.181155  * d3500) +
-    (-17.24839  * d4000) +
-    (0.0294969  * male) +
-    (0.0093234  * age) +
-    (0.0957015  * bmi) +
+    (-17.24839 * d4000) +
+    (0.0294969 * male) +
+    (0.0093234 * age) +
+    (0.0957015 * bmi) +
     (-0.1982235 * c1) +
     (-0.264184  * c2) +
     (-17.12331  * c3);
 
-  // Softmax denominator
-  const denom = 1 + Math.exp(L1) + Math.exp(L2) + Math.exp(L3) + Math.exp(L4);
+  // Softmax probability
+  // Reference category has linear predictor = 0
 
-  // Probability of outcome=1
-  const p1 = Math.exp(L1) / denom;
+  const maxL = Math.max(0, L1, L2, L3, L4);
+
+  const denom =
+    Math.exp(-maxL) +
+    Math.exp(L1 - maxL) +
+    Math.exp(L2 - maxL) +
+    Math.exp(L3 - maxL) +
+    Math.exp(L4 - maxL);
+
+  const p1 = Math.exp(L1 - maxL) / denom;
 
   // Risk classification
+
   const cutoff = 0.15;
   const isHigh = p1 >= cutoff;
 
-  resultEl.innerHTML = `
-    Predicted probability of grade 2–3 HFS: ${(p1*100).toFixed(2)}%<br>
-    Threshold = ${(cutoff*100)}%. Classification: 
-    <span class="${isHigh ? "high-risk" : "low-risk"}">
-      ${isHigh ? "HIGH RISK" : "LOW RISK"}
-    </span>
-  `;
+  document.getElementById("probability").textContent =
+    (p1 * 100).toFixed(2) + "%";
 
-  // Tailored advice
-  const lowAdvice = `
-    <strong>Suggestion (Low risk):</strong>
-    <ul>
-      <li>Standard prevention: regular moisturizer use.</li>
-      <li>Avoid pressure and friction on hands and feet.</li>
-    </ul>
-  `;
+  const riskClass = document.getElementById("riskClass");
 
-  const highAdvice = `
-    <strong>Suggestion (High risk):</strong>
-    <ul>
-      <li>Consider dose modification at clinician’s discretion.</li>
-      <li>Close monitoring and reinforce HFS education.</li>
-    </ul>
-  `;
+  riskClass.textContent =
+    isHigh ? "HIGH RISK" : "LOW RISK";
 
-  adviceEl.style.display = "block";
-  adviceEl.className = "advice " + (isHigh ? "high" : "low");
-  adviceEl.innerHTML = isHigh ? highAdvice : lowAdvice;
+  riskClass.className =
+    isHigh ? "high-risk" : "low-risk";
+
+  const advice = document.getElementById("advice");
+
+  if (isHigh) {
+
+    advice.className = "advice high";
+
+    advice.innerHTML = `
+      <strong>Suggestion (High risk):</strong>
+      <ul>
+        <li>
+          Close monitoring for early symptoms of HFS.
+        </li>
+        <li>
+          Reinforce patient education and preventive
+          skin care.
+        </li>
+        <li>
+          Consider treatment adjustments only when
+          clinically indicated and according to
+          established guidelines.
+        </li>
+      </ul>
+    `;
+
+  } else {
+
+    advice.className = "advice low";
+
+    advice.innerHTML = `
+      <strong>Suggestion (Low risk):</strong>
+      <ul>
+        <li>
+          Standard preventive skin care and
+          regular moisturizer use.
+        </li>
+        <li>
+          Avoid excessive pressure and friction
+          on hands and feet.
+        </li>
+        <li>
+          Continue routine monitoring for HFS
+          symptoms.
+        </li>
+      </ul>
+    `;
+
+  }
+
+  resultBox.style.display = "block";
 }
 </script>
+
 </body>
 </html>
