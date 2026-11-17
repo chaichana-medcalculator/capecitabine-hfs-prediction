@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prediction model for capecitabine-induced HFS (Multinomial, outcome=1)</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; line-height: 1.5; margin: 20px; }
+    .high-risk { color: red; font-weight: bold; }
+    .low-risk { color: green; font-weight: bold; }
+    .advice { margin-top: 12px; padding: 10px; border-radius: 8px; background: #f7f7f7; }
+    .advice.high { border-left: 4px solid red; }
+    .advice.low { border-left: 4px solid green; }
+    label { display:block; margin: 6px 0; }
+    select, input { margin-left: 6px; }
+    button { margin-top: 12px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <h2>Prediction model for capecitabine-induced moderate to severe Hand-Foot syndrome </h2>
+
+  <label>Capecitabine Dosage (mg/day):
+    <select id="dosage">
+      <option value="">Select</option>
+      <option value="2000">2000</option>
+      <option value="2500">2500</option>
+      <option value="3000">3000</option>
+      <option value="3500">3500</option>
+      <option value="4000">4000</option>
+    </select>
+  </label>
+
+  <label>Age: <input type="number" id="age" step="1"></label>
+
+  <label>Sex:
+    <select id="male">
+      <option value="">Select</option>
+      <option value="0">Female</option>
+      <option value="1">Male</option>
+    </select>
+  </label>
+
+  <label>BMI: <input type="number" id="bmi" step="0.1"></label>
+
+  <label>Combination Regimen:
+    <select id="combinedrug">
+      <option value="">Select</option>
+      <option value="0">None</option>
+      <option value="1">Oxaliplatin</option>
+      <option value="2">Gemcitabine</option>
+      <option value="3">Other</option>
+    </select>
+  </label>
+
+  <button onclick="predictHFS()">Predict</button>
+
+  <h3 id="result"></h3>
+  <div id="advice" class="advice" style="display:none;"></div>
+
+<script>
+function predictHFS() {
+  const dosage = parseInt(document.getElementById("dosage").value);
+  const age = parseFloat(document.getElementById("age").value);
+  const male = parseInt(document.getElementById("male").value);
+  const bmi = parseFloat(document.getElementById("bmi").value);
+  const combinedrug = parseInt(document.getElementById("combinedrug").value);
+
+  const resultEl = document.getElementById("result");
+  const adviceEl = document.getElementById("advice");
+
+  if ([dosage, age, male, bmi, combinedrug].some(v => Number.isNaN(v))) {
+    resultEl.innerText = "⚠ Please fill in all fields before prediction.";
+    adviceEl.style.display = "none";
+    return;
+  }
+
+  // dummy coding
+  const d2500 = (dosage === 2500) ? 1 : 0;
+  const d3000 = (dosage === 3000) ? 1 : 0;
+  const d3500 = (dosage === 3500) ? 1 : 0;
+  const d4000 = (dosage === 4000) ? 1 : 0;
+
+  const c1 = (combinedrug === 1) ? 1 : 0; // Oxaliplatin
+  const c2 = (combinedrug === 2) ? 1 : 0; // Gemcitabine
+  const c3 = (combinedrug === 3) ? 1 : 0; // Other
+
+  // ----- Linear predictors -----
+  // Outcome = 1: HFS grade 2–3
+  const L1 = -4.84761 +
+    0.9419611 * d2500 +
+    2.090726  * d3000 +
+    2.894382  * d3500 +
+    4.810177  * d4000 +
+    (-0.6617868 * male) +
+    (0.0615117 * age) +
+    (-0.0890691 * bmi) +
+    (-0.1394743 * c1) +
+    (2.219511  * c2) +
+    (-14.6672  * c3);
+
+  // Outcome = 2: Other
+  const L2 = -4.714329 +
+    (-0.0824916 * d2500) +
+    (0.3030879 * d3000) +
+    (-0.2647294 * d3500) +
+    (-14.70988 * d4000) +
+    (-0.3074451 * male) +
+    (0.0344102 * age) +
+    (-0.0327734 * bmi) +
+    (1.576454  * c1) +
+    (-14.2006  * c2) +
+    (-14.67934 * c3);
+
+  // Outcome = 3: Dead
+  const L3 = -13.14379 +
+    (1.329177 * d2500) +
+    (18.05879 * d3000) +
+    (20.08156 * d3500) +
+    (9.910114 * d4000) +
+    (-16.42904 * male) +
+    (0.0312223 * age) +
+    (-0.4685465 * bmi) +
+    (-1.083026 * c1) +
+    (0.8691366 * c2) +
+    (1.368902  * c3);
+
+  // Outcome = 4: Loss to F/U
+  const L4 = -4.130165 +
+    (-0.4366283 * d2500) +
+    (-0.998465  * d3000) +
+    (-2.181155  * d3500) +
+    (-17.24839  * d4000) +
+    (0.0294969  * male) +
+    (0.0093234  * age) +
+    (0.0957015  * bmi) +
+    (-0.1982235 * c1) +
+    (-0.264184  * c2) +
+    (-17.12331  * c3);
+
+  // Softmax denominator
+  const denom = 1 + Math.exp(L1) + Math.exp(L2) + Math.exp(L3) + Math.exp(L4);
+
+  // Probability of outcome=1
+  const p1 = Math.exp(L1) / denom;
+
+  // Risk classification
+  const cutoff = 0.15;
+  const isHigh = p1 >= cutoff;
+
+  resultEl.innerHTML = `
+    Predicted probability of grade 2–3 HFS: ${(p1*100).toFixed(2)}%<br>
+    Threshold = ${(cutoff*100)}%. Classification: 
+    <span class="${isHigh ? "high-risk" : "low-risk"}">
+      ${isHigh ? "HIGH RISK" : "LOW RISK"}
+    </span>
+  `;
+
+  // Tailored advice
+  const lowAdvice = `
+    <strong>Suggestion (Low risk):</strong>
+    <ul>
+      <li>Standard prevention: regular moisturizer use.</li>
+      <li>Avoid pressure and friction on hands and feet.</li>
+    </ul>
+  `;
+
+  const highAdvice = `
+    <strong>Suggestion (High risk):</strong>
+    <ul>
+      <li>Consider dose modification at clinician’s discretion.</li>
+      <li>Close monitoring and reinforce HFS education.</li>
+    </ul>
+  `;
+
+  adviceEl.style.display = "block";
+  adviceEl.className = "advice " + (isHigh ? "high" : "low");
+  adviceEl.innerHTML = isHigh ? highAdvice : lowAdvice;
+}
+</script>
+</body>
+</html>
